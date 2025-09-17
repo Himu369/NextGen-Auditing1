@@ -8,6 +8,9 @@ import { useDataInsights } from "@/components/data-context";
 // Tab icons
 import { ClipboardList, Database, Settings, Share2 } from "lucide-react";
 
+// Use Case Dropdown Icon
+import { ChevronDown } from "lucide-react";
+
 // Interfaces
 interface DataConnectorProps {
   setMessage: (message: string | null) => void;
@@ -38,8 +41,6 @@ export function DataConnector({
     setLlmConfig,
     ragConfig,
     setRagConfig,
-    analysisConfig,
-    setAnalysisConfig,
   } = useDataInsights();
 
   // Loading and error states
@@ -57,15 +58,6 @@ export function DataConnector({
     string[]
   >([]);
 
-  const [useCases, setUseCases] = useState<UseCase[]>([]);
-  const [useCaseLoading, setUseCaseLoading] = useState<boolean>(true);
-  const [useCaseError, setUseCaseError] = useState<string | null>(null);
-
-  const [dormantChecks, setDormantChecks] = useState<Check[]>([]);
-  const [complianceChecks, setComplianceChecks] = useState<Check[]>([]);
-  const [checksLoading, setChecksLoading] = useState<boolean>(false);
-  const [checksError, setChecksError] = useState<string | null>(null);
-
   const embeddingProviderOptions = ["Hugging Face", "OpenAI", "Cohere"];
   const vectorDBTypeOptions = [
     "Azure Cosmos DB",
@@ -75,10 +67,327 @@ export function DataConnector({
     "Chroma",
   ];
 
+  // Use Case state
+  const defaultUseCases: UseCase[] = [
+    { value: "Dormant Analyzer", label: "Dormant Analyzer" },
+    { value: "Operational Audit", label: "Operational Audit" },
+    { value: "Compliance Audit", label: "Compliance Audit" },
+    { value: "Internal Audit", label: "Internal Audit" },
+  ];
+  const [useCaseOptions, setUseCaseOptions] =
+    useState<UseCase[]>(defaultUseCases);
+  const [selectedUseCase, setSelectedUseCase] = useState<string>(
+    defaultUseCases[0].value
+  );
+
+  const handleAddNewUseCase = () => {
+    const newUseCaseName = window.prompt("Enter the name of the new Use Case:");
+    if (newUseCaseName && newUseCaseName.trim() !== "") {
+      const newUseCase = {
+        value: newUseCaseName.trim(),
+        label: newUseCaseName.trim(),
+      };
+      setUseCaseOptions([...useCaseOptions, newUseCase]);
+      setSelectedUseCase(newUseCase.value);
+    }
+  };
+
+  const [dormantChecks, setDormantChecks] = useState<Check[]>([
+    {
+      id: "select_all_dormant",
+      name: "Select All Dormant Checks",
+      type: "orchestrator",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "safe_deposit_dormancy",
+      name: "Check Safe Deposit Dormancy",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "investment_inactivity",
+      name: "Check Investment Inactivity",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "fixed_deposit_inactivity",
+      name: "Check Fixed Deposit Inactivity",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "demand_deposit_inactivity",
+      name: "Check Demand Deposit Inactivity",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "unclaimed_payment_instruments",
+      name: "Check Unclaimed Payment Instruments",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "eligible_for_cb_transfer",
+      name: "Check Eligible for CB Transfer",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "art3_process_needed",
+      name: "Check Art3 Process Needed",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "contact_attempts_needed",
+      name: "Check Contact Attempts Needed",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "high_value_dormant_accounts",
+      name: "Check High Value Dormant Accounts",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "dormant_to_active_transitions",
+      name: "Check Dormant to Active Transitions",
+      type: "dormant_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "run_all_dormant_checks",
+      name: "Run All Dormant Identification Checks (Orchestrator)",
+      type: "orchestrator",
+      default_selected: false,
+      disabled: false,
+    },
+  ]);
+
+  const [complianceChecks, setComplianceChecks] = useState<Check[]>([
+    {
+      id: "select_all_compliance",
+      name: "Select All Compliance Checks",
+      type: "orchestrator",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_incomplete_contact_attempts",
+      name: "Detect Incomplete Contact Attempts",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_unflagged_dormant_candidates",
+      name: "Detect Unflagged Dormant Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_internal_ledger_candidates",
+      name: "Detect Internal Ledger Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_statement_freeze_candidates",
+      name: "Detect Statement Freeze Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_cbuae_transfer_candidates",
+      name: "Detect CBUAE Transfer Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_foreign_currency_conversion_needed",
+      name: "Detect Foreign Currency Conversion Needed",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_sdb_court_application_needed",
+      name: "Detect SDB Court Application Needed",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_unclaimed_payment_instruments_ledger",
+      name: "Detect Unclaimed Payment Instruments Ledger",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_claim_processing_pending",
+      name: "Detect Claim Processing Pending",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "generate_annual_cbuae_report_summary",
+      name: "Generate Annual CBUAE Report Summary",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "check_record_retention_compliance",
+      name: "Check Record Retention Compliance",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "log_flag_instructions",
+      name: "Log Flag Instructions",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_flag_candidates",
+      name: "Detect Flag Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_ledger_candidates",
+      name: "Detect Ledger Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_freeze_candidates",
+      name: "Detect Freeze Candidates",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "detect_transfer_candidates_to_cb",
+      name: "Detect Transfer Candidates to CB",
+      type: "compliance_check",
+      default_selected: false,
+      disabled: false,
+    },
+    {
+      id: "run_all_compliance_checks",
+      name: "Run All Compliance Checks (Orchestrator)",
+      type: "orchestrator",
+      default_selected: false,
+      disabled: false,
+    },
+  ]);
+
+  const handleSelectAllChecks = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    if (selectedUseCase === "Dormant Analyzer") {
+      setDormantChecks(
+        dormantChecks.map((check) => ({
+          ...check,
+          default_selected: isChecked,
+        }))
+      );
+    } else if (selectedUseCase === "Compliance Audit") {
+      setComplianceChecks(
+        complianceChecks.map((check) => ({
+          ...check,
+          default_selected: isChecked,
+        }))
+      );
+    }
+  };
+
+  const handleSingleCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, checked } = e.target;
+    if (selectedUseCase === "Dormant Analyzer") {
+      const updatedChecks = dormantChecks.map((check) =>
+        check.id === id ? { ...check, default_selected: checked } : check
+      );
+
+      // Update the "Select All" checkbox state based on other checkboxes
+      const allDormantChecked = updatedChecks.every(
+        (check) => check.id === "select_all_dormant" || check.default_selected
+      );
+
+      setDormantChecks(
+        updatedChecks.map((check) =>
+          check.id === "select_all_dormant"
+            ? { ...check, default_selected: allDormantChecked }
+            : check
+        )
+      );
+    } else if (selectedUseCase === "Compliance Audit") {
+      const updatedChecks = complianceChecks.map((check) =>
+        check.id === id ? { ...check, default_selected: checked } : check
+      );
+
+      // Update the "Select All" checkbox state based on other checkboxes
+      const allComplianceChecked = updatedChecks.every(
+        (check) =>
+          check.id === "select_all_compliance" || check.default_selected
+      );
+
+      setComplianceChecks(
+        updatedChecks.map((check) =>
+          check.id === "select_all_compliance"
+            ? { ...check, default_selected: allComplianceChecked }
+            : check
+        )
+      );
+    }
+  };
+
+  const handleSaveUseCase = () => {
+    let selectedChecks;
+    if (selectedUseCase === "Dormant Analyzer") {
+      selectedChecks = dormantChecks
+        .filter((check) => check.default_selected)
+        .map((check) => check.id);
+    } else if (selectedUseCase === "Compliance Audit") {
+      selectedChecks = complianceChecks
+        .filter((check) => check.default_selected)
+        .map((check) => check.id);
+    }
+    console.log("Selected Use Case:", selectedUseCase);
+    console.log("Selected Checks:", selectedChecks);
+    setMessage("Use Case saved successfully!");
+    setShowMessage(true);
+  };
+
   // Section state (tabs)
   const [selectedSection, setSelectedSection] = useState<
-    "analysis" | "database" | "llm" | "rag"
-  >("analysis");
+    "usecase" | "database" | "llm" | "rag"
+  >("usecase");
 
   // Fetch database types
   useEffect(() => {
@@ -211,185 +520,6 @@ export function DataConnector({
     setRagConfig,
   ]);
 
-  // Fetch use cases
-  useEffect(() => {
-    const fetchUseCases = async () => {
-      try {
-        setUseCaseLoading(true);
-        setUseCaseError(null);
-        const response = await axios.get(
-          "https://compliance-agent-api-641805125303.us-central1.run.app/get_use_cases"
-        );
-        const data = response.data;
-        if (data && Array.isArray(data.use_cases)) {
-          setUseCases(data.use_cases);
-          if (data.use_cases.length > 0 && !analysisConfig.selectedUseCase) {
-            setAnalysisConfig((prev) => ({
-              ...prev,
-              selectedUseCase: data.use_cases[0].value,
-            }));
-          }
-        } else {
-          setUseCaseError("Unexpected API response format.");
-        }
-      } catch (err: any) {
-        setUseCaseError(`Failed to load use cases: ${err.message}`);
-      } finally {
-        setUseCaseLoading(false);
-      }
-    };
-    fetchUseCases();
-  }, [analysisConfig.selectedUseCase, setAnalysisConfig]);
-
-  // Fetch checks for use case
-  useEffect(() => {
-    const fetchChecks = async () => {
-      if (!analysisConfig.selectedUseCase) {
-        setDormantChecks([]);
-        setComplianceChecks([]);
-        return;
-      }
-      try {
-        setChecksLoading(true);
-        setChecksError(null);
-        const encodedUseCase = encodeURIComponent(
-          analysisConfig.selectedUseCase
-        );
-        const response = await axios.get(
-          `https://compliance-agent-api-641805125303.us-central1.run.app/get_checks/${encodedUseCase}`
-        );
-        const data = response.data;
-        if (data) {
-          if (Array.isArray(data.dormant_checks)) {
-            setDormantChecks(data.dormant_checks);
-
-            if (analysisConfig.selectedDormantChecks.length === 0) {
-              let initialSelectedDormant: string[] = [];
-              const SELECT_ALL_ID = data.dormant_checks.find(
-                (check: Check) => check.name === "Select All Dormant Checks"
-              )?.id;
-
-              const defaultSelectedRegularDormant = data.dormant_checks
-                .filter(
-                  (check: Check) =>
-                    check.default_selected && check.id !== SELECT_ALL_ID
-                )
-                .map((check: Check) => check.id);
-
-              initialSelectedDormant.push(...defaultSelectedRegularDormant);
-
-              const allRegularDormantChecks = data.dormant_checks.filter(
-                (check: Check) => check.id !== SELECT_ALL_ID
-              );
-              const areAllRegularDormantDefaultSelected =
-                allRegularDormantChecks.length > 0 &&
-                allRegularDormantChecks.every(
-                  (check: Check) => check.default_selected
-                );
-
-              if (SELECT_ALL_ID && areAllRegularDormantDefaultSelected) {
-                initialSelectedDormant.push(SELECT_ALL_ID);
-              }
-              setAnalysisConfig((prev) => ({
-                ...prev,
-                selectedDormantChecks: initialSelectedDormant,
-              }));
-            }
-          } else {
-            setDormantChecks([]);
-          }
-
-          if (Array.isArray(data.compliance_checks)) {
-            setComplianceChecks(data.compliance_checks);
-            if (analysisConfig.selectedComplianceChecks.length === 0) {
-              const defaultCompliance = data.compliance_checks
-                .filter((check: Check) => check.default_selected)
-                .map((check: Check) => check.id);
-              setAnalysisConfig((prev) => ({
-                ...prev,
-                selectedComplianceChecks: defaultCompliance,
-              }));
-            }
-          } else {
-            setComplianceChecks([]);
-          }
-        } else {
-          setChecksError("Unexpected API response format for checks.");
-          setDormantChecks([]);
-          setComplianceChecks([]);
-        }
-      } catch (err: any) {
-        setChecksError(`Failed to load checks: ${err.message}`);
-        setDormantChecks([]);
-        setComplianceChecks([]);
-      } finally {
-        setChecksLoading(false);
-      }
-    };
-    fetchChecks();
-  }, [analysisConfig.selectedUseCase, setAnalysisConfig]);
-
-  // Checkbox change handler
-  const handleCheckboxChange = (
-    checkId: string,
-    isChecked: boolean,
-    checkType: "dormant" | "compliance"
-  ) => {
-    if (checkType === "dormant") {
-      const SELECT_ALL_ID = dormantChecks.find(
-        (check) => check.name === "Select All Dormant Checks"
-      )?.id;
-
-      if (checkId === SELECT_ALL_ID) {
-        let newSelectedDormantChecks: string[] = isChecked
-          ? dormantChecks.map((c) => c.id)
-          : [];
-        setAnalysisConfig((prev) => ({
-          ...prev,
-          selectedDormantChecks: newSelectedDormantChecks,
-        }));
-      } else {
-        setAnalysisConfig((prev) => {
-          let updatedSelected = isChecked
-            ? [...prev.selectedDormantChecks, checkId]
-            : prev.selectedDormantChecks.filter((id) => id !== checkId);
-
-          if (SELECT_ALL_ID) {
-            const otherDormantCheckIds = dormantChecks
-              .filter((check) => check.id !== SELECT_ALL_ID)
-              .map((check) => check.id);
-
-            const areAllOthersSelected =
-              otherDormantCheckIds.length > 0 &&
-              otherDormantCheckIds.every((id) => updatedSelected.includes(id));
-
-            if (
-              areAllOthersSelected &&
-              !updatedSelected.includes(SELECT_ALL_ID)
-            ) {
-              updatedSelected = [...updatedSelected, SELECT_ALL_ID];
-            } else if (
-              !areAllOthersSelected &&
-              updatedSelected.includes(SELECT_ALL_ID)
-            ) {
-              updatedSelected = updatedSelected.filter(
-                (id) => id !== SELECT_ALL_ID
-              );
-            }
-          }
-          return { ...prev, selectedDormantChecks: updatedSelected };
-        });
-      }
-    } else if (checkType === "compliance") {
-      setAnalysisConfig((prev) => ({
-        ...prev,
-        selectedComplianceChecks: isChecked
-          ? [...prev.selectedComplianceChecks, checkId]
-          : prev.selectedComplianceChecks.filter((id) => id !== checkId),
-      }));
-    }
-  };
-
   // Connect handler
   const handleConnect = async () => {
     if (
@@ -474,69 +604,6 @@ export function DataConnector({
     }
   };
 
-  // Save analysis modes handler
-  const handleSave = async () => {
-    const SELECT_ALL_DORMANT_CHECKS_NAME = "Select All Dormant Checks";
-    const filteredDormantChecks = analysisConfig.selectedDormantChecks.filter(
-      (checkId) => {
-        const check = dormantChecks.find((dCheck) => dCheck.id === checkId);
-        return check && check.name !== SELECT_ALL_DORMANT_CHECKS_NAME;
-      }
-    );
-
-    const payload = {
-      use_case: analysisConfig.selectedUseCase,
-      selected_dormant_checks: filteredDormantChecks.map((id) => {
-        const check = dormantChecks.find((dCheck) => dCheck.id === id);
-        return check ? check.name : id;
-      }),
-      selected_compliance_checks: analysisConfig.selectedComplianceChecks.map(
-        (id) => {
-          const check = complianceChecks.find((cCheck) => cCheck.id === id);
-          return check ? check.name : id;
-        }
-      ),
-    };
-
-    try {
-      setMessage("Saving analysis modes and checks...");
-      setShowMessage(true);
-
-      const response = await axios.post(
-        "https://compliance-agent-api-641805125303.us-central1.run.app/apply_selections",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-
-      if (response.data && response.data.message) {
-        setMessage(`Success: ${response.data.message}`);
-      } else {
-        setMessage("Failed to save selections: Unknown error from API.");
-      }
-    } catch (err: any) {
-      let errorMessage = `Error saving analysis modes: ${
-        err.message || "Please check console for details."
-      }`;
-      if (axios.isAxiosError(err) && err.response) {
-        if (err.response.data && err.response.data.message) {
-          errorMessage = `Failed to save selections: ${err.response.data.message}`;
-        } else if (err.response.status) {
-          errorMessage = `Failed to save selections: Server responded with status ${
-            err.response.status
-          } - ${err.response.statusText || "Unknown error"}`;
-        }
-      }
-      setMessage(errorMessage);
-    } finally {
-      setShowMessage(true);
-    }
-  };
-
   // Save RAG Credentials handler
   const handleSaveRagCredentials = async () => {
     const payload = {
@@ -548,8 +615,6 @@ export function DataConnector({
       embedding_provider: ragConfig.embeddingProvider,
       embedding_model: ragConfig.embeddingModel,
       embedding_api_key: ragConfig.embeddingApiKey,
-      embedding_api_base: null,
-      embedding_api_version: null,
       storage_account: ragConfig.storageAccount,
       container_name: ragConfig.containerName,
       connection_string: ragConfig.connectionString,
@@ -612,19 +677,97 @@ export function DataConnector({
     }
   };
 
-  // Sticky tab controls with icons (remains at the top, always visible while scrolling)
+  // NEW: Handler for the "Enable LLM" button
+  const handleEnableLlm = async () => {
+    // Check if all fields are filled
+    if (
+      !llmConfig.llmProvider ||
+      !llmConfig.llmModelName ||
+      !llmConfig.prompt ||
+      !llmConfig.maxTokens ||
+      !llmConfig.temperature
+    ) {
+      setMessage("Please fill in all LLM configuration fields.");
+      setShowMessage(true);
+      return;
+    }
+
+    // Convert string values to numbers for the payload
+    const parsedMaxTokens = parseInt(llmConfig.maxTokens);
+    const parsedTemperature = parseFloat(llmConfig.temperature);
+
+    if (isNaN(parsedMaxTokens) || isNaN(parsedTemperature)) {
+      setMessage("Max Tokens and Temperature must be valid numbers.");
+      setShowMessage(true);
+      return;
+    }
+
+    try {
+      setMessage("Attempting to enable LLM...");
+      setShowMessage(true);
+
+      const payload = {
+        model_type: llmConfig.llmProvider.toLowerCase(),
+        model_name: llmConfig.llmModelName,
+        prompt: llmConfig.prompt,
+        max_tokens: parsedMaxTokens,
+        temperature: parsedTemperature,
+      };
+
+      const response = await axios.post(
+        "https://fastapi-rag-app-641805125303.us-central1.run.app/llm/generate",
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        setMessage(
+          `LLM enabled successfully. Response: ${JSON.stringify(
+            response.data.response
+          )}`
+        );
+      } else {
+        setMessage(
+          `Failed to enable LLM: ${
+            response.data.message || response.data.error || "Unknown error"
+          }`
+        );
+      }
+    } catch (err: any) {
+      let errorMessage = `Error enabling LLM: ${
+        err.message || "Please check console for details."
+      }`;
+      if (axios.isAxiosError(err) && err.response) {
+        if (err.response.data && err.response.data.message) {
+          errorMessage = `Failed to enable LLM: ${err.response.data.message}`;
+        } else {
+          errorMessage = `Failed to enable LLM: ${err.response.status} - ${
+            err.response.statusText || "Unknown error"
+          }`;
+        }
+      }
+      setMessage(errorMessage);
+    } finally {
+      setShowMessage(true);
+    }
+  };
+
   return (
-    <div className="flex-grow w-full bg-white rounded-lg shadow-md overflow-y-auto max-h-[calc(100vh-200px)] relative">
-      {/* Sticky Tabs Bar */}
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-200">
-        <div className="flex w-full gap-4 px-8 pt-6 pb-4 bg-gray-800">
+    <div className="flex-grow w-full bg-gray-200 rounded-lg shadow-lg overflow-y-auto max-h-[calc(100vh-200px)] relative">
+      <div className="sticky top-0 z-20 bg-gray-900 border-b border-gray-700">
+        <div className="flex w-full gap-4 px-8 pt-6 pb-4">
           <Button
-            onClick={() => setSelectedSection("analysis")}
-            className={`flex-1 flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition
+            onClick={() => setSelectedSection("usecase")}
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all duration-300 ease-in-out
               ${
-                selectedSection === "analysis"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-800 hover:bg-blue-300"
+                selectedSection === "usecase"
+                  ? "bg-blue-600 text-white shadow-xl"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
               }
             `}
             tabIndex={0}
@@ -633,11 +776,11 @@ export function DataConnector({
           </Button>
           <Button
             onClick={() => setSelectedSection("database")}
-            className={`flex-1 flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all duration-300 ease-in-out
               ${
                 selectedSection === "database"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-800 hover:bg-blue-300"
+                  ? "bg-blue-600 text-white shadow-xl"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
               }
             `}
             tabIndex={0}
@@ -646,11 +789,11 @@ export function DataConnector({
           </Button>
           <Button
             onClick={() => setSelectedSection("llm")}
-            className={`flex-1 flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all duration-300 ease-in-out
               ${
                 selectedSection === "llm"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-800 hover:bg-blue-300"
+                  ? "bg-blue-600 text-white shadow-xl"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
               }
             `}
             tabIndex={0}
@@ -659,11 +802,11 @@ export function DataConnector({
           </Button>
           <Button
             onClick={() => setSelectedSection("rag")}
-            className={`flex-1 flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all duration-300 ease-in-out
               ${
                 selectedSection === "rag"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-800 hover:bg-blue-300"
+                  ? "bg-blue-600 text-white shadow-xl"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
               }
             `}
             tabIndex={0}
@@ -675,9 +818,122 @@ export function DataConnector({
 
       {/* Section content, scrollable below sticky tabs */}
       <div className="p-8">
+        {selectedSection === "usecase" && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">Use Case</h3>
+            <div className="mb-4">
+              <label
+                htmlFor="useCaseSelect"
+                className="block text-gray-700 text-sm font-bold mb-2"
+              >
+                Select Use Case
+              </label>
+              <div className="relative">
+                <select
+                  id="useCaseSelect"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                  value={selectedUseCase}
+                  onChange={(e) => setSelectedUseCase(e.target.value)}
+                >
+                  {useCaseOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                  <ChevronDown size={20} />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAddNewUseCase}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md mb-6 transition-colors duration-200"
+            >
+              Add New Use Case
+            </Button>
+
+            {selectedUseCase === "Dormant Analyzer" && (
+              <div className="bg-gray-50 border border-gray-300 rounded-lg p-6 shadow-inner">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                  Dormant Checks
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                  {dormantChecks.map((check) => (
+                    <div key={check.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={check.id}
+                        name={check.id}
+                        checked={check.default_selected}
+                        onChange={
+                          check.id === "select_all_dormant"
+                            ? handleSelectAllChecks
+                            : handleSingleCheck
+                        }
+                        className="form-checkbox h-5 w-5 text-blue-600 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-blue-500"
+                        disabled={check.disabled}
+                      />
+                      <label
+                        htmlFor={check.id}
+                        className="ml-3 text-gray-700 font-medium cursor-pointer text-sm"
+                      >
+                        {check.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedUseCase === "Compliance Audit" && (
+              <div className="bg-gray-50 border border-gray-300 rounded-lg p-6 shadow-inner">
+                <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                  Compliance Checks
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                  {complianceChecks.map((check) => (
+                    <div key={check.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={check.id}
+                        name={check.id}
+                        checked={check.default_selected}
+                        onChange={
+                          check.id === "select_all_compliance"
+                            ? handleSelectAllChecks
+                            : handleSingleCheck
+                        }
+                        className="form-checkbox h-5 w-5 text-blue-600 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-blue-500"
+                        disabled={check.disabled}
+                      />
+                      <label
+                        htmlFor={check.id}
+                        className="ml-3 text-gray-700 font-medium cursor-pointer text-sm"
+                      >
+                        {check.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-6">
+              <Button
+                onClick={handleSaveUseCase}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition-colors duration-200"
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        )}
+
         {selectedSection === "database" && (
-          <>
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">
               Connect with Database
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -693,23 +949,28 @@ export function DataConnector({
                 ) : error ? (
                   <p className="text-red-500">{error}</p>
                 ) : (
-                  <select
-                    id="databaseType"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    value={dbConfig.databaseType}
-                    onChange={(e) =>
-                      setDbConfig((prev) => ({
-                        ...prev,
-                        databaseType: e.target.value,
-                      }))
-                    }
-                  >
-                    {databaseOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="databaseType"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                      value={dbConfig.databaseType}
+                      onChange={(e) =>
+                        setDbConfig((prev) => ({
+                          ...prev,
+                          databaseType: e.target.value,
+                        }))
+                      }
+                    >
+                      {databaseOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
                 )}
               </div>
               <div>
@@ -722,7 +983,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="connectionName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dbConfig.connectionName}
                   onChange={(e) =>
                     setDbConfig((prev) => ({
@@ -743,7 +1004,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="serverName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dbConfig.serverName}
                   onChange={(e) =>
                     setDbConfig((prev) => ({
@@ -764,7 +1025,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="databaseName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dbConfig.databaseName}
                   onChange={(e) =>
                     setDbConfig((prev) => ({
@@ -785,7 +1046,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="portNumber"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dbConfig.portNumber}
                   onChange={(e) =>
                     setDbConfig((prev) => ({
@@ -806,7 +1067,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="userName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dbConfig.userName}
                   onChange={(e) =>
                     setDbConfig((prev) => ({
@@ -827,7 +1088,7 @@ export function DataConnector({
                 <input
                   type="password"
                   id="databasePassword"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dbConfig.databasePassword}
                   onChange={(e) =>
                     setDbConfig((prev) => ({
@@ -842,17 +1103,17 @@ export function DataConnector({
             <div className="flex justify-end gap-4 mt-4">
               <Button
                 onClick={handleConnect}
-                className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition-colors duration-200"
               >
                 Connect
               </Button>
             </div>
-          </>
+          </div>
         )}
 
         {selectedSection === "llm" && (
-          <>
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">
               LLM Configuration
             </h3>
             {llmLoading ? (
@@ -868,26 +1129,31 @@ export function DataConnector({
                   >
                     Provider
                   </label>
-                  <select
-                    id="llmProvider"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    value={llmConfig.llmProvider}
-                    onChange={(e) =>
-                      setLlmConfig((prev) => ({
-                        ...prev,
-                        llmProvider: e.target.value,
-                      }))
-                    }
-                  >
-                    {availableLlmModels &&
-                      Object.keys(availableLlmModels.available).map(
-                        (option) => (
-                          <option key={option} value={option}>
-                            {option.charAt(0).toUpperCase() + option.slice(1)}
-                          </option>
-                        )
-                      )}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="llmProvider"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                      value={llmConfig.llmProvider}
+                      onChange={(e) =>
+                        setLlmConfig((prev) => ({
+                          ...prev,
+                          llmProvider: e.target.value,
+                        }))
+                      }
+                    >
+                      {availableLlmModels &&
+                        Object.keys(availableLlmModels.available).map(
+                          (option) => (
+                            <option key={option} value={option}>
+                              {option.charAt(0).toUpperCase() + option.slice(1)}
+                            </option>
+                          )
+                        )}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label
@@ -896,23 +1162,28 @@ export function DataConnector({
                   >
                     Model Name
                   </label>
-                  <select
-                    id="llmModelName"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    value={llmConfig.llmModelName}
-                    onChange={(e) =>
-                      setLlmConfig((prev) => ({
-                        ...prev,
-                        llmModelName: e.target.value,
-                      }))
-                    }
-                  >
-                    {llmModelNameOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="llmModelName"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                      value={llmConfig.llmModelName}
+                      onChange={(e) =>
+                        setLlmConfig((prev) => ({
+                          ...prev,
+                          llmModelName: e.target.value,
+                        }))
+                      }
+                    >
+                      {llmModelNameOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label
@@ -924,7 +1195,7 @@ export function DataConnector({
                   <input
                     type="text"
                     id="prompt"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={llmConfig.prompt}
                     onChange={(e) =>
                       setLlmConfig((prev) => ({
@@ -945,7 +1216,7 @@ export function DataConnector({
                   <input
                     type="number"
                     id="maxTokens"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={llmConfig.maxTokens}
                     onChange={(e) =>
                       setLlmConfig((prev) => ({
@@ -967,7 +1238,7 @@ export function DataConnector({
                     type="number"
                     step="0.1"
                     id="temperature"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={llmConfig.temperature}
                     onChange={(e) =>
                       setLlmConfig((prev) => ({
@@ -982,21 +1253,18 @@ export function DataConnector({
             )}
             <div className="flex justify-start gap-4 mt-4">
               <Button
-                // Add actual enable LLM handler here
-                onClick={() =>
-                  setMessage("Enable LLM clicked (handler not implemented)")
-                }
-                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg"
+                onClick={handleEnableLlm}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition-colors duration-200"
               >
                 Enable LLM
               </Button>
             </div>
-          </>
+          </div>
         )}
 
         {selectedSection === "rag" && (
-          <>
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">
               RAG Credentials
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -1012,26 +1280,31 @@ export function DataConnector({
                 ) : llmError ? (
                   <p className="text-red-500">{llmError}</p>
                 ) : (
-                  <select
-                    id="generationLlmProvider"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    value={ragConfig.generationLlmProvider}
-                    onChange={(e) =>
-                      setRagConfig((prev) => ({
-                        ...prev,
-                        generationLlmProvider: e.target.value,
-                      }))
-                    }
-                  >
-                    {availableLlmModels &&
-                      Object.keys(availableLlmModels.available).map(
-                        (option) => (
-                          <option key={option} value={option}>
-                            {option.charAt(0).toUpperCase() + option.slice(1)}
-                          </option>
-                        )
-                      )}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="generationLlmProvider"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                      value={ragConfig.generationLlmProvider}
+                      onChange={(e) =>
+                        setRagConfig((prev) => ({
+                          ...prev,
+                          generationLlmProvider: e.target.value,
+                        }))
+                      }
+                    >
+                      {availableLlmModels &&
+                        Object.keys(availableLlmModels.available).map(
+                          (option) => (
+                            <option key={option} value={option}>
+                              {option.charAt(0).toUpperCase() + option.slice(1)}
+                            </option>
+                          )
+                        )}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
                 )}
               </div>
               <div>
@@ -1046,23 +1319,28 @@ export function DataConnector({
                 ) : llmError ? (
                   <p className="text-red-500">{llmError}</p>
                 ) : (
-                  <select
-                    id="generationModel"
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    value={ragConfig.generationModel}
-                    onChange={(e) =>
-                      setRagConfig((prev) => ({
-                        ...prev,
-                        generationModel: e.target.value,
-                      }))
-                    }
-                  >
-                    {generationModelOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id="generationModel"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                      value={ragConfig.generationModel}
+                      onChange={(e) =>
+                        setRagConfig((prev) => ({
+                          ...prev,
+                          generationModel: e.target.value,
+                        }))
+                      }
+                    >
+                      {generationModelOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <ChevronDown size={20} />
+                    </div>
+                  </div>
                 )}
               </div>
               <div>
@@ -1075,7 +1353,7 @@ export function DataConnector({
                 <input
                   type="password"
                   id="generationApiKey"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={ragConfig.generationApiKey}
                   onChange={(e) =>
                     setRagConfig((prev) => ({
@@ -1093,23 +1371,28 @@ export function DataConnector({
                 >
                   Embedding Provider
                 </label>
-                <select
-                  id="embeddingProvider"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={ragConfig.embeddingProvider}
-                  onChange={(e) =>
-                    setRagConfig((prev) => ({
-                      ...prev,
-                      embeddingProvider: e.target.value,
-                    }))
-                  }
-                >
-                  {embeddingProviderOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    id="embeddingProvider"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                    value={ragConfig.embeddingProvider}
+                    onChange={(e) =>
+                      setRagConfig((prev) => ({
+                        ...prev,
+                        embeddingProvider: e.target.value,
+                      }))
+                    }
+                  >
+                    {embeddingProviderOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                    <ChevronDown size={20} />
+                  </div>
+                </div>
               </div>
               <div>
                 <label
@@ -1121,7 +1404,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="embeddingModel"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={ragConfig.embeddingModel}
                   onChange={(e) =>
                     setRagConfig((prev) => ({
@@ -1142,7 +1425,7 @@ export function DataConnector({
                 <input
                   type="password"
                   id="embeddingApiKey"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={ragConfig.embeddingApiKey}
                   onChange={(e) =>
                     setRagConfig((prev) => ({
@@ -1154,7 +1437,7 @@ export function DataConnector({
                 />
               </div>
             </div>
-            <h4 className="text-xl font-semibold text-gray-800 mb-6">
+            <h4 className="text-2xl font-bold text-gray-800 mb-6">
               Azure Blob Storage
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -1168,7 +1451,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="storageAccount"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={ragConfig.storageAccount}
                   onChange={(e) =>
                     setRagConfig((prev) => ({
@@ -1189,7 +1472,7 @@ export function DataConnector({
                 <input
                   type="text"
                   id="containerName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={ragConfig.containerName}
                   onChange={(e) =>
                     setRagConfig((prev) => ({
@@ -1197,20 +1480,20 @@ export function DataConnector({
                       containerName: e.target.value,
                     }))
                   }
-                  placeholder="e.g., compliance-docs"
+                  placeholder="e.g., mycontainer"
                 />
               </div>
-              <div className="md:col-span-2 lg:col-span-1">
+              <div className="md:col-span-2">
                 <label
                   htmlFor="connectionString"
                   className="block text-gray-700 text-sm font-bold mb-2"
                 >
                   Connection String
                 </label>
-                <textarea
+                <input
+                  type="text"
                   id="connectionString"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y"
-                  rows={3}
+                  className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={ragConfig.connectionString}
                   onChange={(e) =>
                     setRagConfig((prev) => ({
@@ -1218,14 +1501,15 @@ export function DataConnector({
                       connectionString: e.target.value,
                     }))
                   }
-                  placeholder="DefaultEndpointsProtocol=https;AccountName=..."
-                ></textarea>
+                  placeholder="DefaultEndpointsProtocol=https;AccountName=...;"
+                />
               </div>
             </div>
-            <h4 className="text-xl font-semibold text-gray-800 mb-6">
-              Vector Database Configuration
+
+            <h4 className="text-2xl font-bold text-gray-800 mb-6">
+              Vector Database
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
                 <label
                   htmlFor="vectorDBType"
@@ -1233,248 +1517,131 @@ export function DataConnector({
                 >
                   Vector DB Type
                 </label>
-                <select
-                  id="vectorDBType"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={ragConfig.vectorDBType}
-                  onChange={(e) =>
-                    setRagConfig((prev) => ({
-                      ...prev,
-                      vectorDBType: e.target.value,
-                    }))
-                  }
-                >
-                  {vectorDBTypeOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    id="vectorDBType"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10 bg-white"
+                    value={ragConfig.vectorDBType}
+                    onChange={(e) =>
+                      setRagConfig((prev) => ({
+                        ...prev,
+                        vectorDBType: e.target.value,
+                      }))
+                    }
+                  >
+                    {vectorDBTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                    <ChevronDown size={20} />
+                  </div>
+                </div>
               </div>
-              <div className="md:col-span-2">
-                <label
-                  htmlFor="vectorDBConnectionStringEndpoint"
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                >
-                  Connection String/Endpoint
-                </label>
-                <input
-                  type="text"
-                  id="vectorDBConnectionStringEndpoint"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={ragConfig.vectorDBConnectionStringEndpoint}
-                  onChange={(e) =>
-                    setRagConfig((prev) => ({
-                      ...prev,
-                      vectorDBConnectionStringEndpoint: e.target.value,
-                    }))
-                  }
-                  placeholder="https://your-cosmos.documents.azure.com:443/"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="vectorDBAPIKey"
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                >
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  id="vectorDBAPIKey"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={ragConfig.vectorDBAPIKey}
-                  onChange={(e) =>
-                    setRagConfig((prev) => ({
-                      ...prev,
-                      vectorDBAPIKey: e.target.value,
-                    }))
-                  }
-                  placeholder="Primary key"
-                />
-              </div>
-            </div>
-            <h4 className="text-xl font-semibold text-gray-800 mb-6">
-              Azure Cosmos DB Specific
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div>
-                <label
-                  htmlFor="cosmosDBDatabaseName"
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                >
-                  Database Name
-                </label>
-                <input
-                  type="text"
-                  id="cosmosDBDatabaseName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={ragConfig.cosmosDBDatabaseName}
-                  onChange={(e) =>
-                    setRagConfig((prev) => ({
-                      ...prev,
-                      cosmosDBDatabaseName: e.target.value,
-                    }))
-                  }
-                  placeholder="ComplianceVectorDB"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="cosmosDBContainerName"
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                >
-                  Container Name
-                </label>
-                <input
-                  type="text"
-                  id="cosmosDBContainerName"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={ragConfig.cosmosDBContainerName}
-                  onChange={(e) =>
-                    setRagConfig((prev) => ({
-                      ...prev,
-                      cosmosDBContainerName: e.target.value,
-                    }))
-                  }
-                  placeholder="compliance_vectors"
-                />
-              </div>
+              {ragConfig.vectorDBType === "Azure Cosmos DB" ? (
+                <>
+                  <div>
+                    <label
+                      htmlFor="cosmosDBDatabaseName"
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                    >
+                      Cosmos DB Database Name
+                    </label>
+                    <input
+                      type="text"
+                      id="cosmosDBDatabaseName"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={ragConfig.cosmosDBDatabaseName}
+                      onChange={(e) =>
+                        setRagConfig((prev) => ({
+                          ...prev,
+                          cosmosDBDatabaseName: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g., vector-database"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="cosmosDBContainerName"
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                    >
+                      Cosmos DB Container Name
+                    </label>
+                    <input
+                      type="text"
+                      id="cosmosDBContainerName"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={ragConfig.cosmosDBContainerName}
+                      onChange={(e) =>
+                        setRagConfig((prev) => ({
+                          ...prev,
+                          cosmosDBContainerName: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g., vector-container"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label
+                      htmlFor="vectorDBConnectionStringEndpoint"
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                    >
+                      Vector DB Endpoint
+                    </label>
+                    <input
+                      type="text"
+                      id="vectorDBConnectionStringEndpoint"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={ragConfig.vectorDBConnectionStringEndpoint}
+                      onChange={(e) =>
+                        setRagConfig((prev) => ({
+                          ...prev,
+                          vectorDBConnectionStringEndpoint: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g., https://your-vector-db.com"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="vectorDBAPIKey"
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                    >
+                      Vector DB API Key
+                    </label>
+                    <input
+                      type="password"
+                      id="vectorDBAPIKey"
+                      className="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={ragConfig.vectorDBAPIKey}
+                      onChange={(e) =>
+                        setRagConfig((prev) => ({
+                          ...prev,
+                          vectorDBAPIKey: e.target.value,
+                        }))
+                      }
+                      placeholder="********"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
-            <div className="flex justify-start gap-4 mt-4">
+            <div className="flex justify-end gap-4 mt-4">
               <Button
                 onClick={handleSaveRagCredentials}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg"
+                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition-colors duration-200"
               >
                 Save RAG Credentials
               </Button>
             </div>
-          </>
-        )}
-
-        {selectedSection === "analysis" && (
-          <>
-            <h3 className="text-xl font-semibold text-gray-800 mb-6">
-              Analysis Modes
-            </h3>
-            <div className="mb-4">
-              <label
-                htmlFor="useCase"
-                className="block text-gray-700 text-sm font-bold mb-2"
-              >
-                Select Use Case
-              </label>
-              {useCaseLoading ? (
-                <p className="text-gray-500">Loading analysis modes...</p>
-              ) : useCaseError ? (
-                <p className="text-red-500">{useCaseError}</p>
-              ) : (
-                <select
-                  id="useCase"
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  value={analysisConfig.selectedUseCase}
-                  onChange={(e) =>
-                    setAnalysisConfig((prev) => ({
-                      ...prev,
-                      selectedUseCase: e.target.value,
-                    }))
-                  }
-                >
-                  {useCases.map((useCase) => (
-                    <option key={useCase.value} value={useCase.value}>
-                      {useCase.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-            {checksLoading ? (
-              <p className="text-gray-500">Loading checks...</p>
-            ) : checksError ? (
-              <p className="text-red-500">{checksError}</p>
-            ) : (
-              <>
-                {dormantChecks.length > 0 && (
-                  <div className="mt-6 p-4 border rounded-lg shadow-sm bg-gray-50">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                      Dormant Checks
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {dormantChecks.map((check) => (
-                        <div key={check.id} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={check.id}
-                            checked={analysisConfig.selectedDormantChecks.includes(
-                              check.id
-                            )}
-                            onChange={(e) =>
-                              handleCheckboxChange(
-                                check.id,
-                                e.target.checked,
-                                "dormant"
-                              )
-                            }
-                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                          />
-                          <label
-                            htmlFor={check.id}
-                            className="ml-2 text-gray-700 text-sm"
-                          >
-                            {check.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {complianceChecks.length > 0 && (
-                  <div className="mt-6 p-4 border rounded-lg shadow-sm bg-gray-50">
-                    <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                      Compliance Checks
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {complianceChecks.map((check) => (
-                        <div key={check.id} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={check.id}
-                            checked={analysisConfig.selectedComplianceChecks.includes(
-                              check.id
-                            )}
-                            onChange={(e) =>
-                              handleCheckboxChange(
-                                check.id,
-                                e.target.checked,
-                                "compliance"
-                              )
-                            }
-                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                          />
-                          <label
-                            htmlFor={check.id}
-                            className="ml-2 text-gray-700 text-sm"
-                          >
-                            {check.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-            <div className="flex justify-start mt-4">
-              <Button
-                onClick={handleSave}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg"
-              >
-                Save
-              </Button>
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>

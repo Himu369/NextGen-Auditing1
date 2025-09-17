@@ -26,8 +26,6 @@ interface DataContextType {
   setLlmConfig: React.Dispatch<React.SetStateAction<LlmConfigState>>;
   ragConfig: RagConfigState; // This is the RAG config specific to Data Connector
   setRagConfig: React.Dispatch<React.SetStateAction<RagConfigState>>;
-  analysisConfig: AnalysisConfigState;
-  setAnalysisConfig: React.Dispatch<React.SetStateAction<AnalysisConfigState>>;
 
   // Prompt Setup Configurations
   ragKnowledgeBaseConfig: RagKnowledgeBaseConfigState;
@@ -79,12 +77,6 @@ interface RagConfigState {
   vectorDBAPIKey: string;
   cosmosDBDatabaseName: string;
   cosmosDBContainerName: string;
-}
-
-interface AnalysisConfigState {
-  selectedUseCase: string;
-  selectedDormantChecks: string[];
-  selectedComplianceChecks: string[];
 }
 
 // Interfaces for Prompt Setup Configurations
@@ -183,12 +175,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     cosmosDBContainerName: "compliance_vectors",
   });
 
-  const [analysisConfig, setAnalysisConfig] = useState<AnalysisConfigState>({
-    selectedUseCase: "",
-    selectedDormantChecks: [],
-    selectedComplianceChecks: [],
-  });
-
   // States for Prompt Setup Configurations
   const [ragKnowledgeBaseConfig, setRagKnowledgeBaseConfig] =
     useState<RagKnowledgeBaseConfigState>({
@@ -258,11 +244,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       cosmosDBDatabaseName: "ComplianceVectorDB",
       cosmosDBContainerName: "compliance_vectors",
     });
-    setAnalysisConfig({
-      selectedUseCase: "",
-      selectedDormantChecks: [],
-      selectedComplianceChecks: [],
-    });
+
     // Reset Prompt Setup configurations
     setRagKnowledgeBaseConfig({
       selectedFileName: null,
@@ -303,8 +285,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setLlmConfig,
     ragConfig,
     setRagConfig,
-    analysisConfig,
-    setAnalysisConfig,
     // Prompt Setup Configs
     ragKnowledgeBaseConfig,
     setRagKnowledgeBaseConfig,

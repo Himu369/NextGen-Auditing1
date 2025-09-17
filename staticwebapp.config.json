@@ -1,0 +1,16 @@
+{
+  "mimeTypes": {
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".svg": "image/svg+xml"
+  },
+  "routes": [
+    {
+      "route": "/dist/*",
+      "serve": "/dist/*",
+      "headers": {
+        "Cache-Control": "public, max-age=604800, immutable"
+      }
+    }
+  ]
+}
